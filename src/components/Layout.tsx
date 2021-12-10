@@ -1,10 +1,13 @@
 import React, { FC } from 'react';
-import { AppBar, Box, Toolbar, Typography, IconButton, MenuItem, Menu, Container } from '@mui/material';
+import { Link as RouteLink } from 'react-router-dom';
+import { AppBar, Box, Toolbar, Link, IconButton, MenuItem, Menu } from '@mui/material';
 import { Menu as MenuIcon, AccountCircle } from '@mui/icons-material';
 import { useHistory } from 'react-router-dom';
 import { useResetRecoilState } from 'Recoil';
 
 import { userSelector } from '@/recoil/selectors/user';
+
+import { AppNavDrawer } from '@/components';
 
 const Layout: FC = ({ children }) => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -25,15 +28,15 @@ const Layout: FC = ({ children }) => {
   };
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <AppBar enableColorOnDark position="static">
+    <Box sx={{ display: 'flex', height: '100vh' }}>
+      <AppBar enableColorOnDark position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
         <Toolbar>
           <IconButton size="large" edge="start" color="inherit" aria-label="menu" sx={{ mr: 2 }}>
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          <Link underline="none" variant="h6" component={RouteLink} to="/" sx={{ color: 'grey.800', flexGrow: 1 }}>
             GAM
-          </Typography>
+          </Link>
           <div>
             <IconButton
               size="large"
@@ -49,8 +52,8 @@ const Layout: FC = ({ children }) => {
               id="menu-appbar"
               anchorEl={anchorEl}
               anchorOrigin={{
-                vertical: 'top',
                 horizontal: 'right',
+                vertical: 'bottom',
               }}
               keepMounted
               transformOrigin={{
@@ -67,9 +70,11 @@ const Layout: FC = ({ children }) => {
           </div>
         </Toolbar>
       </AppBar>
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <AppNavDrawer />
+      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+        <Toolbar />
         {children}
-      </Container>
+      </Box>
     </Box>
   );
 };

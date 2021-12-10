@@ -10,6 +10,8 @@ const Login = lazy(() => import('./login'));
 const Dashboard = lazy(() => import('./dashboard'));
 const About = lazy(() => import('./about'));
 const BookingForm = lazy(() => import('./bookings/form'));
+const BookingList = lazy(() => import('./bookings'));
+const LineItemsList = lazy(() => import('./line-items'));
 
 export default function Pages(): ReactElement {
   return (
@@ -23,7 +25,9 @@ export default function Pages(): ReactElement {
       <Switch>
         <Redirect exact from="/" to="/dashboard" />
         <ProtectedRoute path="/dashboard" component={Dashboard} />
+        <ProtectedRoute exact path="/bookings" component={BookingList} />
         <ProtectedRoute path="/bookings/create" component={BookingForm} />
+        <ProtectedRoute exact path="/line-items" component={LineItemsList} />
         <ProtectedRoute path="/about" component={About} />
         <Route path="/login" component={Login} />
         <Route component={NotFound} />

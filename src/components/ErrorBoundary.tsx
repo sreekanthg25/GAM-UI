@@ -4,7 +4,7 @@ interface State {
   hasError: boolean;
 }
 
-export class ErrorBoundary extends React.Component<State> {
+export default class ErrorBoundary extends React.Component<State> {
   state: State = {
     hasError: false,
   };

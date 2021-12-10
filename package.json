@@ -5,9 +5,10 @@
   "main": "index.js",
   "scripts": {
     "start": "webpack-dev-server --mode=development --open --hot",
-    "build": "webpack --mode=production",
+    "build": "npm run clean && webpack --mode=production",
     "bundle-report": "webpack-bundle-analyzer --port 4200 dist/stats.json",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "clean": "rm -rf dist"
   },
   "author": "Sreekanth Gopal",
   "license": "ISC",
@@ -16,9 +17,9 @@
     "@emotion/react": "^11.4.1",
     "@emotion/styled": "^11.3.0",
     "@hookform/resolvers": "^2.8.0",
-    "@mui/icons-material": "^5.0.0-rc.0",
+    "@mui/icons-material": "^5.2.1",
     "@mui/lab": "^5.0.0-alpha.46",
-    "@mui/material": "^5.0.0-rc.0",
+    "@mui/material": "^5.2.3",
     "date-fns": "^2.23.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
@@ -47,6 +48,7 @@
     "babel-loader": "^8.2.2",
     "babel-plugin-direct-import": "^0.9.2",
     "clean-webpack-plugin": "^4.0.0-alpha.0",
+    "copy-webpack-plugin": "^9.0.1",
     "css-loader": "^6.2.0",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",

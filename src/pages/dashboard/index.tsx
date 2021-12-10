@@ -2,73 +2,52 @@ import React, { FC } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { useRecoilValue } from 'Recoil';
 
-import { Card, CardHeader, Avatar, CardContent, Typography, Box, Button, Grid } from '@mui/material';
-import { Campaign, DoubleArrow } from '@mui/icons-material';
-import { blueGrey } from '@mui/material/colors';
+import { Button, Grid, Box, Typography } from '@mui/material';
+import { pink, teal } from '@mui/material/colors';
 
 import { orderSelector } from '@/recoil/selectors/order';
+import { lineItemsSelector } from '@/recoil/selectors/lineitems';
+import { DashboardCard } from '@/components';
 
 const Dashboard: FC = () => {
   const orders = useRecoilValue(orderSelector);
+  const lineItems = useRecoilValue(lineItemsSelector);
   return (
-    <Grid container spacing={4}>
-      <Grid item xs={8} md={4}>
-        <Button component={RouterLink} to="/bookings/create" variant="contained" fullWidth size="large">
-          Create New Booking
-        </Button>
+    <Grid container spacing={8}>
+      <Grid item xs={10} md={8} sx={{ margin: 'auto' }}>
+        <Box
+          sx={{
+            borderRadius: '10px',
+            border: 1,
+            borderColor: 'divider',
+            px: 2,
+            py: 4,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-around',
+          }}
+        >
+          <img src="assets/img/users1.png" height="120px" alt="dashboard image" />
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography variant="h5" sx={{ mb: 2 }}>
+              Reach 100 million users
+            </Typography>
+            <Button component={RouterLink} to="/bookings/create" variant="contained" size="medium">
+              Create New Booking
+            </Button>
+          </Box>
+        </Box>
       </Grid>
-      <Grid item xs={10} md={10}>
-        <Card sx={{ maxWidth: 400 }}>
-          <CardHeader
-            title={
-              <Typography variant="h5" component="h1">
-                Bookings
-              </Typography>
-            }
-            avatar={
-              <Avatar sx={{ bgcolor: 'secondary.main' }}>
-                <Campaign />
-              </Avatar>
-            }
-            sx={{ bgcolor: blueGrey[500] }}
-          />
-          <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Box>
-              <Typography>Total Count</Typography>
-              <Typography variant="h4" component="div">
-                {orders.length}
-              </Typography>
-            </Box>
-            <Box>
-              <Avatar>
-                <DoubleArrow />
-              </Avatar>
-            </Box>
-          </CardContent>
-        </Card>
+      <Grid item container xs={12} spacing={5} sx={{ justifyContent: 'space-around' }}>
+        <Grid item xs={10} md={5}>
+          <DashboardCard bgColor={pink[500]} count={orders.length} title="Total Bookings" action="/bookings" />
+        </Grid>
+        <Grid item xs={10} md={5}>
+          <DashboardCard bgColor={teal[500]} count={lineItems.length} title="Total Line Items" action="/line-items" />
+        </Grid>
       </Grid>
     </Grid>
   );
 };
-/* <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Grid container spacing={3}>
-        <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', height: 240 }}>
-          <Typography component="h2" variant="h6" color="primary" gutterBottom>
-            Recent Campaigns
-          </Typography>
-          <Typography component="p" variant="h4">
-            10
-          </Typography>
-          <Typography color="text.secondary" sx={{ flex: 1 }}>
-            last created on 15 August, 2021
-          </Typography>
-          <div>
-            <Link color="primary" href="#">
-              Create New
-            </Link>
-          </div>
-        </Paper>
-      </Grid>
-    </Container> */
 
 export default Dashboard;

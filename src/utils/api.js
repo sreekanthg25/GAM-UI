@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { getToken, clearUserData } from './user';
 
-async function api(url, method = 'GET', body = null) {
+async function api(url, method = 'GET', body = null, options = {}) {
   const token = getToken();
   const response = await fetch(`${url}`, {
     method,
-    ...(body && { body: JSON.stringify(body) }),
+    ...(body && (options.formData ? { body } : { body: JSON.stringify(body) })),
     headers: {
-      'Content-Type': 'application/json',
+      ...(!options.formData && { 'Content-Type': 'application/json' }),
       ...(token && { Authorization: token }),
     },
   });
@@ -27,7 +27,7 @@ async function api(url, method = 'GET', body = null) {
 
 export default {
   get: api,
-  post: (url, body) => api(url, 'POST', body),
+  post: (url, body, options) => api(url, 'POST', body, options),
   put: (url, body) => api(url, 'PUT', body),
   delete: (url) => api(url, 'DELETE'),
 };

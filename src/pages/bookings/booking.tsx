@@ -21,7 +21,14 @@ import {
 import { SelectChangeEvent } from '@mui/material/Select';
 
 import { orderSelector } from '@/recoil/selectors/order';
-import { bookingInfo, formStep, showSubmitButton, formSaving } from '@/recoil/atoms/bookingform';
+import {
+  bookingInfo,
+  formStep,
+  showSubmitButton,
+  formSaving,
+  stepCompleted,
+  refreshBooking,
+} from '@/recoil/atoms/bookingform';
 import api from '@/utils/api';
 
 /* type BookingType = FC & {
@@ -50,6 +57,8 @@ const Booking: FC = () => {
   const setActionButton = useSetRecoilState(showSubmitButton);
   const setFormSavingState = useSetRecoilState(formSaving);
   const orders = useRecoilValue(orderSelector);
+  const setStepCompletion = useSetRecoilState(stepCompleted(0));
+  const refreshBookingData = useSetRecoilState(refreshBooking);
 
   const {
     control,
@@ -64,6 +73,8 @@ const Booking: FC = () => {
       setBooking((curVal) => ({ ...curVal, booking_id: results?.booking?.booking_id }));
       setNextStep((step) => step + 1);
       setFormSavingState(false);
+      setStepCompletion(true);
+      refreshBookingData((currVal) => currVal + 1);
     } catch (err) {
       const { error } = err as { error: string };
       setFormSavingState(false);

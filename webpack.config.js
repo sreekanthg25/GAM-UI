@@ -5,6 +5,7 @@ const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 const ESLintPlugin = require('eslint-webpack-plugin');
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   output: {
@@ -59,5 +60,6 @@ module.exports = {
     new HtmlWebPackPlugin({
       template: './src/index.html',
     }),
+    new CopyWebpackPlugin({ patterns: [{ from: 'assets/img', to: path.join(__dirname, 'dist', 'assets', 'img') }] }),
   ],
 };

@@ -1,42 +1,22 @@
-import React, { FC, useState, useEffect, useMemo } from 'react';
-import { useRecoilValue } from 'Recoil';
+import React, { FC, useState, useEffect, useMemo, ReactElement } from 'react';
+import { useRecoilState, useSetRecoilState, useRecoilValue } from 'Recoil';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { addDays } from 'date-fns';
+import { addHours } from 'date-fns';
 
 /* Material UI */
-import { Grid, TextField, Box, Divider, Typography, Autocomplete } from '@mui/material';
+import { Grid, TextField, Box, Divider, Typography, Autocomplete, Snackbar, Alert, AlertTitle } from '@mui/material';
 import AdapterDateFns from '@mui/lab/AdapterDateFns';
-import DatePicker from '@mui/lab/DatePicker';
+import DatePicker from '@mui/lab/DateTimePicker';
 import LocalizationProvider from '@mui/lab/LocalizationProvider';
 
 import api from '@/utils/api';
-import { lineItemInfo } from '@/recoil/atoms/bookingform';
+import { lineItemInfo, bookingInfo, formStep, formSaving, stepCompleted, lineItemId } from '@/recoil/atoms/bookingform';
+import { lineItemsSelector } from '@/recoil/selectors/lineitems';
 
-/* type LineItemType = FC & {
-  onSubmit: () => void;
-}; */
-
-type CreativeProps = {
-  name: string;
-  id: number;
-  type: string;
-  size: {
-    width: number;
-    height: number;
-  };
-};
-
-type LineItemFormInputs = {
-  name: string;
-  creative_placeholders: CreativeProps[];
-  budget: number;
-  cpm: number;
-  impressions: number;
-  startDate: Date | null;
-  endDate: Date | null;
-};
+import { CreativeProps, LineItemFormInputs } from './formTypes';
+import { transformPayloadData } from './helpers';
 
 const schema = yup.object().shape({
   name: yup.string().required(),
@@ -48,7 +28,15 @@ const schema = yup.object().shape({
 });
 
 const LineItem: FC = () => {
-  const lineItemDefault = useRecoilValue(lineItemInfo);
+  const initErrorState = { open: false, message: '' };
+  const [err, setErrors] = useState(initErrorState);
+  const [lineItemDefault, setLineItem] = useRecoilState(lineItemInfo);
+  const setNextStep = useSetRecoilState(formStep);
+  const setFormSavingState = useSetRecoilState(formSaving);
+  const booking = useRecoilValue(bookingInfo);
+  const setStepCompletion = useSetRecoilState(stepCompleted(1));
+  const setLineItemId = useSetRecoilState(lineItemId);
+  const lineItems = useRecoilValue(lineItemsSelector);
   const {
     control,
     handleSubmit,
@@ -63,8 +51,15 @@ const LineItem: FC = () => {
   const [cpmValue, budgetValue, selectedStartDate] = watch(['cpm', 'budget', 'startDate']);
 
   const endMinDate = useMemo(() => {
-    return selectedStartDate ? addDays(selectedStartDate, 1) : addDays(startMinDate, 1);
+    const hoursDiff = 6;
+    return selectedStartDate ? addHours(selectedStartDate, hoursDiff) : addHours(startMinDate, hoursDiff);
   }, [selectedStartDate, startMinDate]);
+
+  useEffect(() => {
+    if (selectedStartDate) {
+      setValue('endDate', endMinDate);
+    }
+  }, [selectedStartDate, endMinDate, setValue]);
 
   useEffect(() => {
     if (cpmValue && budgetValue) {
@@ -77,69 +72,76 @@ const LineItem: FC = () => {
     const getCreatives = async () => {
       setLoading(true);
       const results = await api.get('http://35.200.238.164:9000/basilisk/v0/creativesizes');
-      setCreatives(results.filter((obj: CreativeProps) => !!obj.name));
+      setCreatives(
+        results.filter(
+          (obj: CreativeProps) => !!obj.name && (obj.type === 'PIXEL' || obj.type === 'SYSTEM_DEFINED_NATIVE'),
+        ),
+      );
       setLoading(false);
     };
     getCreatives();
   }, []);
 
-  const transformPayloadData = (data: LineItemFormInputs) => {
-    const { startDate, endDate, budget } = data;
-    const payload = {
-      startDateTime: {
-        date: {
-          year: startDate?.getUTCFullYear(),
-          month: startDate?.getUTCMonth(),
-          day: startDate?.getUTCDate(),
-        },
-        hour: startDate?.getUTCHours(),
-        minute: startDate?.getUTCMinutes(),
-        second: startDate?.getUTCSeconds(),
-        timeZoneId: 'Asia/Kolkata',
-      },
-      endDateTime: {
-        date: {
-          year: endDate?.getUTCFullYear(),
-          month: endDate?.getUTCMonth(),
-          day: endDate?.getUTCDate(),
-        },
-        hour: endDate?.getUTCHours(),
-        minute: endDate?.getUTCMinutes(),
-        second: endDate?.getUTCSeconds(),
-        timeZoneId: 'Asia/Kolkata',
-      },
-      costPerUnit: {
-        currencyCode: 'INR',
-        microAmount: budget * 1000000,
-      },
-      targeting: {
-        inventoryTargeting: {
-          targetedAdUnits: [
-            {
-              adUnitId: '22036727976',
-              includeDescendants: true,
-            },
-          ],
-        },
-      },
-    };
-    return data;
+  const handleFormSubmit: SubmitHandler<LineItemFormInputs> = async (data) => {
+    try {
+      setFormSavingState(true);
+      const payload = transformPayloadData({ ...data, booking_id: booking.booking_id });
+      const results = await api.post('http://35.200.238.164:9000/basilisk/v0/lineitem', payload);
+      setLineItem(data);
+      setNextStep((step) => step + 1);
+      setFormSavingState(false);
+      setStepCompletion(true);
+      setLineItemId(results?.gp_line_item?.gplineitem_id);
+    } catch (err) {
+      const { error } = err as { error: string };
+      setFormSavingState(false);
+      setErrors({ open: true, message: error || 'Something went wrong, try after sometime' });
+    }
   };
 
-  const handleFormSubmit: SubmitHandler<LineItemFormInputs> = (data) => {
-    // setNextStep((step) => step + 1);
-    const payload = transformPayloadData(data);
-    console.log(payload);
+  const renderSnackBar = (): ReactElement => {
+    return (
+      <Snackbar open={true} anchorOrigin={{ horizontal: 'right', vertical: 'top' }}>
+        <Alert severity="error" variant="filled" onClose={() => setErrors(initErrorState)}>
+          <AlertTitle>Error</AlertTitle>
+          {err.message}
+        </Alert>
+      </Snackbar>
+    );
   };
 
   return (
     <Box>
+      {err.open && renderSnackBar()}
       <Box sx={{ mb: 2 }}>
         <Typography variant="h5">Line Item</Typography>
       </Box>
       <Divider />
       <Box component="form" id="line-item-form" noValidate onSubmit={handleSubmit(handleFormSubmit)} sx={{ my: 3 }}>
         <Grid container spacing={4}>
+          <Grid item xs={12} md={8}>
+            <Controller
+              control={control}
+              name="line_item"
+              render={({ field }) => (
+                <Autocomplete
+                  {...field}
+                  options={[{ name: 'Create New', id: 'new' }, ...lineItems]}
+                  getOptionLabel={(option) => {
+                    console.log(option);
+                    return option.name;
+                  }}
+                  onChange={(_, data) => field.onChange(data)}
+                  isOptionEqualToValue={(option, value) => {
+                    // console.log(option, value);
+                    return option.id === value || value.id;
+                  }}
+                  filterSelectedOptions
+                  renderInput={(params) => <TextField {...params} variant="outlined" label="Select Line Item" />}
+                />
+              )}
+            />
+          </Grid>
           <Grid item xs={12} md={8}>
             <Controller
               control={control}
@@ -239,9 +241,9 @@ const LineItem: FC = () => {
                   render={({ field }) => (
                     <DatePicker
                       {...field}
-                      minDate={startMinDate}
+                      minDateTime={startMinDate}
                       label="Start Date"
-                      inputFormat="dd/MM/yyyy"
+                      inputFormat="dd/MM/yyyy HH:mm"
                       renderInput={(params) => <TextField {...params} error={!!errors.startDate} required />}
                     />
                   )}
@@ -256,9 +258,9 @@ const LineItem: FC = () => {
                   render={({ field }) => (
                     <DatePicker
                       {...field}
-                      minDate={endMinDate}
+                      minDateTime={endMinDate}
                       label="End Date"
-                      inputFormat="dd/MM/yyyy"
+                      inputFormat="dd/MM/yyyy HH:mm"
                       renderInput={(params) => <TextField {...params} error={!!errors.endDate} required />}
                     />
                   )}
@@ -271,7 +273,5 @@ const LineItem: FC = () => {
     </Box>
   );
 };
-
-// LineItem.onSubmit = () => ({});
 
 export default LineItem;
