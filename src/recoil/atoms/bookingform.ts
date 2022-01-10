@@ -1,6 +1,6 @@
 import { atom, atomFamily } from 'Recoil';
 
-import { LineItemFormInputs } from '../../pages/bookings/formTypes';
+import { LineItemFormInputs } from '@/common/formTypes';
 
 export const bookingInfo = atom({
   key: 'booking',

@@ -2,6 +2,7 @@ export interface NavPage {
   path: string;
   icon?: string;
   title?: string;
+  adminOnly?: boolean;
 }
 const pages: readonly NavPage[] = [
   {
@@ -10,7 +11,7 @@ const pages: readonly NavPage[] = [
     title: 'Dashboard',
   },
   {
-    path: '/line-items',
+    path: '/line-item',
     icon: 'ScheduleIcon',
     title: 'Line Items',
   },
@@ -18,6 +19,12 @@ const pages: readonly NavPage[] = [
     path: '/bookings',
     icon: 'LibraryBooksIcon',
     title: 'Bookings',
+  },
+  {
+    path: '/settings',
+    icon: 'SettingsIcon',
+    title: 'Settings',
+    adminOnly: true,
   },
 ];
 

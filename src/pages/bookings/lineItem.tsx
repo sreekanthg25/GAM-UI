@@ -15,8 +15,8 @@ import api from '@/utils/api';
 import { lineItemInfo, bookingInfo, formStep, formSaving, stepCompleted, lineItemId } from '@/recoil/atoms/bookingform';
 import { lineItemsSelector } from '@/recoil/selectors/lineitems';
 
-import { CreativeProps, LineItemFormInputs } from './formTypes';
-import { transformPayloadData } from './helpers';
+import { CreativeProps, LineItemFormInputs } from '@/common/formTypes';
+import { transformPayloadData } from '@/common/formMethods';
 
 const schema = yup.object().shape({
   name: yup.string().required(),
