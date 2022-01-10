@@ -1,17 +1,27 @@
 import React, { useState } from 'react';
 
-import { TableContainer, Table, TableCell, TableRow, TableHead, TableBody, TablePagination } from '@mui/material';
+import {
+  TableContainer,
+  Table,
+  TableCell,
+  TableRow,
+  TableHead,
+  TableBody,
+  TablePagination,
+  TableCellProps,
+} from '@mui/material';
 
 import { get } from '@/utils/common';
 
-interface columnProps {
+type ColumnProps = {
   label: string;
-  field: string;
-  renderer?: <T extends Record<string, T>>(row: Record<string, T>) => React.ReactNode | string | undefined;
-}
+  field?: string;
+  renderer?: (row: Record<string, unknown> | string | undefined) => React.ReactNode | string | undefined;
+  cellProps?: TableCellProps;
+};
 
 interface CustomTableProps<T> {
-  columns: columnProps[];
+  columns: ColumnProps[];
   rows: Record<string | number, T>[];
   page?: number;
   count?: number;
@@ -26,7 +36,11 @@ const CustomTable = <T extends Record<string, T>>(
   const [rowsPerPage, setRowsPerPage] = React.useState(page);
 
   const renderHeaderCells = () => {
-    return columns.map(({ label }) => <TableCell key={label}> {label}</TableCell>);
+    return columns.map(({ label, cellProps }) => (
+      <TableCell {...cellProps} key={label}>
+        {label}
+      </TableCell>
+    ));
   };
 
   const handleChangePage = (_: unknown, newValue: number) => {
@@ -42,9 +56,16 @@ const CustomTable = <T extends Record<string, T>>(
     const rowsToDisplay = rows.slice(startIndex, startIndex + rowsPerPage);
     return rowsToDisplay.map((row, index) => (
       <TableRow key={row.id ? `${row.id}` : index}>
-        {columns.map(({ field }) => {
-          const value = get(row, field);
-          return <TableCell key={field}>{value}</TableCell>;
+        {columns.map(({ field, renderer, label, cellProps }) => {
+          let node: React.ReactNode | Record<string, T> | undefined = field ? get(row, field) : row;
+          if (renderer) {
+            node = renderer(node);
+          }
+          return (
+            <TableCell {...cellProps} key={label}>
+              {node}
+            </TableCell>
+          );
         })}
       </TableRow>
     ));
@@ -53,7 +74,7 @@ const CustomTable = <T extends Record<string, T>>(
   const renderPagination = () => {
     return (
       <TablePagination
-        rowsPerPageOptions={[5, 10, 15, 20, 25]}
+        rowsPerPageOptions={[5, 10, 15, 20, 25, 50, 100]}
         component="div"
         count={totalCount}
         rowsPerPage={rowsPerPage}

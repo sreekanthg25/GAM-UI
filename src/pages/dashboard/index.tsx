@@ -43,7 +43,7 @@ const Dashboard: FC = () => {
           <DashboardCard bgColor={pink[500]} count={orders.length} title="Total Bookings" action="/bookings" />
         </Grid>
         <Grid item xs={10} md={5}>
-          <DashboardCard bgColor={teal[500]} count={lineItems.length} title="Total Line Items" action="/line-items" />
+          <DashboardCard bgColor={teal[500]} count={lineItems.length} title="Total Line Items" action="/line-item" />
         </Grid>
       </Grid>
     </Grid>

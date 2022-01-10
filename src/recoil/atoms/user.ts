@@ -9,5 +9,5 @@ export const userToken = atom({
 
 export const userData = atom({
   key: 'userData',
-  default: getUser() || null,
+  default: getUser<Record<string, string>>() || null,
 });

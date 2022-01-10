@@ -28,8 +28,27 @@ export type PayloadLineItemForm = LineItemFormInputs & {
   booking_id: string;
 };
 
+export type TemplateVar = {
+  is_required: boolean;
+  unique_name: string;
+  type: string;
+  label: string;
+};
+
+export type ImageType = {
+  id: string;
+  name: string;
+  url: string;
+  image_meta: {
+    width: number;
+    height: number;
+  };
+};
+
 export type CreativeFormTypes = {
   template: CreativeProps | null;
-  csv_file: FileList | null | undefined;
   zip_file: FileList | null | undefined;
+  creatives: Record<string, string | ImageType | number>[];
+  globalCreatives: Record<string, string>;
+  globalVariableConfig: Record<string, string>;
 };
