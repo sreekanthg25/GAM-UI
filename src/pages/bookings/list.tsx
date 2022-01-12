@@ -9,7 +9,6 @@ import {
   Divider,
   Button,
   TableCellProps,
-  IconButton,
   Dialog,
   DialogContent,
   DialogTitle,
@@ -18,7 +17,6 @@ import {
   Link,
 } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
-import { MergeType } from '@mui/icons-material';
 
 import { CustomTable } from '@/components';
 import { orderSelector } from '@/recoil/selectors/order';
@@ -94,9 +92,7 @@ const BookingsList: FC = () => {
     }
     return (
       <Box>
-        <IconButton onClick={() => onMigrate(selectedRow)}>
-          <MergeType />
-        </IconButton>
+        <Button onClick={() => onMigrate(selectedRow)}>Migrate</Button>
       </Box>
     );
   };

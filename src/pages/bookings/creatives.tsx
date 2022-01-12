@@ -1,4 +1,4 @@
-import React, { FC, useState, useEffect } from 'react';
+import React, { FC, useState, useEffect, useMemo } from 'react';
 import { useRecoilValue, useSetRecoilState } from 'Recoil';
 import { useForm, Controller, SubmitHandler, useFieldArray } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -30,16 +30,16 @@ import {
 import { SelectChangeEvent } from '@mui/material/Select';
 
 import { LoadingButton } from '@mui/lab';
-import { UploadFileOutlined, ExpandMore } from '@mui/icons-material';
+import { UploadFileOutlined, ExpandMore, Info as InfoIcon } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 
-import { formStep, formSaving, stepCompleted, lineItemId } from '@/recoil/atoms/bookingform';
+import { formStep, formSaving, stepCompleted, lineItemId, lineItemInfo } from '@/recoil/atoms/bookingform';
 import { configsSelector } from '@/recoil/selectors/configs';
 
 import api from '@/utils/api';
 
-import { CreativeFormTypes, CreativeProps, ImageType, TemplateVar } from '@/common/formTypes';
-import { transformCreativesPayload } from '@/common/formMethods';
+import { CreativeFormTypes, CreativeProps, ImageType, TemplateVar, CreativeValidatorType } from '@/common/formTypes';
+import { transformCreativesPayload, validateCreativeSizes } from '@/common/formMethods';
 
 const FileInput = styled('input')({
   display: 'none',
@@ -94,6 +94,9 @@ const Creatives: FC = () => {
   const [uploadedImages, setImagesUploaded] = useState<ImageType[]>([]);
   const [isSettingsStep, setSettingStep] = useState(false);
   const globalConfigs = useRecoilValue(configsSelector);
+  const [creativeDimensions, setDimensions] = useState<TemplateVar[]>([]);
+  const [creativeSizeErrors, setErrors] = useState<CreativeValidatorType['errors']>([]);
+  const lineItemDetails = useRecoilValue(lineItemInfo);
 
   // console.log(errors);
 
@@ -111,6 +114,23 @@ const Creatives: FC = () => {
     'globalVariableConfig',
   ]);
   // console.log(fields);
+
+  const lineItemCreativeSizes = useMemo(() => {
+    if (!lineItemDetails) {
+      return [];
+    }
+    const { creative_placeholders = [] } = lineItemDetails;
+    return creative_placeholders.reduce((acc, creative) => {
+      const {
+        type,
+        size: { width, height },
+      } = creative;
+      if (type !== 'NATIVE') {
+        acc.push(`${width}x${height}`);
+      }
+      return acc;
+    }, [] as string[]);
+  }, [lineItemDetails]);
 
   useEffect(() => {
     const getTemplates = async () => {
@@ -134,6 +154,12 @@ const Creatives: FC = () => {
             : []),
           ...results.variables,
         ]);
+        setDimensions(
+          results.variables.filter(
+            (variable: { unique_name: string }) =>
+              variable.unique_name === 'Width' || variable.unique_name === 'Height',
+          ),
+        );
         setTemplateLoading(false);
       };
       getTemplateMeta();
@@ -174,6 +200,11 @@ const Creatives: FC = () => {
 
   const handleFormSubmit: SubmitHandler<CreativeFormTypes> = async ({ template, creatives }) => {
     try {
+      const { errors: validationResults } = validateCreativeSizes(creatives, lineItemCreativeSizes);
+      setErrors(validationResults);
+      if (validationResults) {
+        return;
+      }
       setFormSavingState(true);
 
       const template_id = (template as CreativeProps).id;
@@ -398,6 +429,7 @@ const Creatives: FC = () => {
           <Accordion defaultExpanded={idx === 0} key={fld.uuid}>
             <AccordionSummary expandIcon={<ExpandMore />}>
               <Typography>{imageCreatives[idx].name}</Typography>
+              {creativeSizeErrors?.[idx] && <InfoIcon color="error" fontSize="small" sx={{ ml: 2 }} />}
             </AccordionSummary>
             <AccordionDetails>
               <Grid container spacing={4}>
@@ -419,10 +451,10 @@ const Creatives: FC = () => {
                     </Typography>
                   </Box>
                 </Grid>
-                <Grid item md={10}>
-                  <Stack spacing={4}>
-                    {templateMetaVariables.map(({ unique_name, label, type, is_required }) => {
-                      return type !== 'Asset' ? (
+                <Grid item container spacing={4}>
+                  {templateMetaVariables.map(({ unique_name, label, type, is_required }) => {
+                    return type !== 'Asset' && type !== 'Long' ? (
+                      <Grid key={unique_name} item md={8}>
                         <Controller
                           control={control}
                           name={`creatives.${idx}.${unique_name}`}
@@ -437,9 +469,40 @@ const Creatives: FC = () => {
                             />
                           )}
                         />
-                      ) : null;
-                    })}
-                  </Stack>
+                      </Grid>
+                    ) : null;
+                  })}
+                  {creativeDimensions.length && (
+                    <Grid item xs={12}>
+                      <Grid container spacing={4}>
+                        {creativeDimensions.map(({ unique_name, label, is_required }) => {
+                          return (
+                            <Grid item key={unique_name} md={4}>
+                              <Controller
+                                control={control}
+                                name={`creatives.${idx}.${unique_name}`}
+                                render={({ field }) => (
+                                  <TextField
+                                    {...field}
+                                    variant="outlined"
+                                    required={is_required}
+                                    label={label}
+                                    fullWidth
+                                  />
+                                )}
+                              />
+                            </Grid>
+                          );
+                        })}
+                      </Grid>
+                      {creativeSizeErrors?.[idx] && (
+                        <FormHelperText error={creativeSizeErrors?.[idx]}>Creative sizes mismatch</FormHelperText>
+                      )}
+                      <FormHelperText>{`The supported creative sizes for this line item: ${lineItemCreativeSizes.join(
+                        ', ',
+                      )}`}</FormHelperText>
+                    </Grid>
+                  )}
                 </Grid>
               </Grid>
             </AccordionDetails>

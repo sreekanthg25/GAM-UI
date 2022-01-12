@@ -51,6 +51,8 @@ const ConfigForm: FC = () => {
     resolver: yupResolver(schema),
   });
 
+  console.log(errors);
+
   const { fields, append, remove, replace } = useFieldArray({
     control,
     name: 'variables',

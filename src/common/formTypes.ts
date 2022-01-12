@@ -2,6 +2,7 @@ export type CreativeProps = {
   name: string;
   id: number;
   type: string;
+  creative_type: string;
   size: {
     width: number;
     height: number;
@@ -51,4 +52,8 @@ export type CreativeFormTypes = {
   creatives: Record<string, string | ImageType | number>[];
   globalCreatives: Record<string, string>;
   globalVariableConfig: Record<string, string>;
+};
+
+export type CreativeValidatorType = {
+  errors?: boolean[];
 };

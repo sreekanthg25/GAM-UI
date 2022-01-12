@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useState } from 'react';
+import React, { FC, useEffect, useState, useMemo } from 'react';
 import { useLocation, Link as RouteLink, useHistory } from 'react-router-dom';
 
 import { useRecoilValue, useSetRecoilState } from 'Recoil';
@@ -28,9 +28,12 @@ import {
   ListSubheader,
   FormControl,
   InputLabel,
+  Dialog,
+  DialogTitle,
+  DialogActions,
 } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
-import { UploadFileOutlined, ExpandMore } from '@mui/icons-material';
+import { UploadFileOutlined, ExpandMore, Info as InfoIcon } from '@mui/icons-material';
 import { SelectChangeEvent } from '@mui/material/Select';
 
 import { styled } from '@mui/material/styles';
@@ -41,10 +44,8 @@ import { configsSelector } from '@/recoil/selectors/configs';
 
 import { refreshLineItems } from '@/recoil/atoms/lineitems';
 
-import { CreativeFormTypes, CreativeProps, TemplateVar, ImageType } from '@/common/formTypes';
-import { transformCreativesPayload } from '@/common/formMethods';
-
-// import { AlertNotification } from '@/components';
+import { CreativeFormTypes, CreativeProps, TemplateVar, ImageType, CreativeValidatorType } from '@/common/formTypes';
+import { transformCreativesPayload, validateCreativeSizes } from '@/common/formMethods';
 
 const supportedZipFileMimeTypes = ['application/zip', 'application/x-zip-compressed', 'multipart/x-zip'];
 
@@ -95,19 +96,38 @@ const CreativesForm: FC = () => {
   const [templates, setTemplates] = useState([]);
   const [templateLoading, setTemplateLoading] = useState(false);
   const [templateMetaVariables, setTemplateVariables] = useState<TemplateVar[]>([]);
+  const [creativeDimensions, setDimensions] = useState<TemplateVar[]>([]);
   const [imageUploading, setImageUploading] = useState(false);
   const [uploadedImages, setImagesUploaded] = useState<ImageType[]>([]);
   const [isSettingsEnabled, setSettingsAction] = useState(false);
   const [isSettingsStep, setSettingStep] = useState(false);
-  const [lineItemDetails, setLineItemDetails] = useState<Record<string, string> | null>(null);
+  const [lineItemDetails, setLineItemDetails] = useState<Record<string, string | CreativeProps[]> | null>(null);
   const [isFormSaving, setFormSavingState] = useState(false);
   const globalConfigs = useRecoilValue(configsSelector);
+  const [creativeSizeErrors, setErrors] = useState<CreativeValidatorType['errors']>([]);
+
+  const [notification, setNotification] = useState(false);
 
   const history = useHistory();
 
-  const lineItemRefresh = useSetRecoilState(refreshLineItems);
+  const lineItemCreativeSizes = useMemo(() => {
+    if (!lineItemDetails) {
+      return [];
+    }
+    const { creative_placeholders = [] } = lineItemDetails as Record<string, CreativeProps[]>;
+    return creative_placeholders.reduce((acc, creative) => {
+      const {
+        creative_type,
+        size: { width, height },
+      } = creative;
+      if (creative_type !== 'NATIVE') {
+        acc.push(`${width}x${height}`);
+      }
+      return acc;
+    }, [] as string[]);
+  }, [lineItemDetails]);
 
-  console.log(lineItemDetails);
+  const lineItemRefresh = useSetRecoilState(refreshLineItems);
 
   const { fields } = useFieldArray({
     control,
@@ -127,7 +147,7 @@ const CreativesForm: FC = () => {
     if (lineItemId) {
       const getLineItemDetails = async () => {
         const results = await api.get(`http://35.200.238.164:9000/basilisk/v0/lineitem/${lineItemId}`);
-        setLineItemDetails(results);
+        setLineItemDetails(results?.gp_line_item || null);
       };
       getLineItemDetails();
     }
@@ -168,6 +188,12 @@ const CreativesForm: FC = () => {
             : []),
           ...results.variables,
         ]);
+        setDimensions(
+          results.variables.filter(
+            (variable: { unique_name: string }) =>
+              variable.unique_name === 'Width' || variable.unique_name === 'Height',
+          ),
+        );
         setTemplateLoading(false);
       };
       getTemplateMeta();
@@ -180,7 +206,6 @@ const CreativesForm: FC = () => {
         setImageUploading(true);
         const imageZip = uploadedZipFile as FileList;
         const zip = Array.from(imageZip || []);
-        console.log(zip);
         const formData = new FormData();
         formData.append('zip_file', zip[0]);
         const results = await api.post('http://35.200.238.164:9000/basilisk/v0/media/upload', formData, {
@@ -226,11 +251,16 @@ const CreativesForm: FC = () => {
 
   const onSuccessfulSubmission = () => {
     lineItemRefresh((curVal) => curVal + 1);
-    history.push(`/line-item?oid=${orderId}`);
+    setNotification(true);
   };
 
   const handleFormSubmit: SubmitHandler<CreativeFormTypes> = async ({ template, creatives }) => {
     try {
+      const { errors: validationResults } = validateCreativeSizes(creatives, lineItemCreativeSizes);
+      setErrors(validationResults);
+      if (validationResults) {
+        return;
+      }
       setFormSavingState(true);
       const template_id = (template as CreativeProps).id;
       const payload = {
@@ -416,6 +446,7 @@ const CreativesForm: FC = () => {
           <Accordion defaultExpanded={idx === 0} key={fld.uuid}>
             <AccordionSummary expandIcon={<ExpandMore />}>
               <Typography>{imageCreatives[idx].name}</Typography>
+              {creativeSizeErrors?.[idx] && <InfoIcon color="error" fontSize="small" sx={{ ml: 2 }} />}
             </AccordionSummary>
             <AccordionDetails>
               <Grid container spacing={4}>
@@ -437,27 +468,53 @@ const CreativesForm: FC = () => {
                     </Typography>
                   </Box>
                 </Grid>
-                <Grid item md={8}>
-                  <Stack spacing={4}>
-                    {templateMetaVariables.map(({ unique_name, label, type, is_required }) => {
-                      return type !== 'Asset' ? (
+                <Grid item container spacing={4}>
+                  {templateMetaVariables.map(({ unique_name, label, type, is_required }) => {
+                    return type !== 'Asset' && type !== 'Long' ? (
+                      <Grid key={unique_name} item md={8}>
                         <Controller
                           control={control}
                           name={`creatives.${idx}.${unique_name}`}
                           render={({ field }) => (
-                            <TextField
-                              {...field}
-                              key={unique_name}
-                              variant="outlined"
-                              required={is_required}
-                              label={label}
-                              fullWidth
-                            />
+                            <TextField {...field} variant="outlined" required={is_required} label={label} fullWidth />
                           )}
                         />
-                      ) : null;
-                    })}
-                  </Stack>
+                      </Grid>
+                    ) : null;
+                  })}
+                  {creativeDimensions.length && (
+                    <Grid item xs={12}>
+                      <Grid container spacing={4}>
+                        {creativeDimensions.map(({ unique_name, label, is_required }) => {
+                          return (
+                            <Grid item key={unique_name} md={4}>
+                              <Controller
+                                control={control}
+                                name={`creatives.${idx}.${unique_name}`}
+                                render={({ field }) => (
+                                  <TextField
+                                    {...field}
+                                    variant="outlined"
+                                    required={is_required}
+                                    label={label}
+                                    fullWidth
+                                  />
+                                )}
+                              />
+                            </Grid>
+                          );
+                        })}
+                      </Grid>
+                      {creativeSizeErrors?.[idx] && (
+                        <FormHelperText error={creativeSizeErrors?.[idx]}>Creative sizes mismatch</FormHelperText>
+                      )}
+                      {lineItemCreativeSizes.length ? (
+                        <FormHelperText>{`The supported creative sizes for this line item: ${lineItemCreativeSizes.join(
+                          ', ',
+                        )}`}</FormHelperText>
+                      ) : null}
+                    </Grid>
+                  )}
                 </Grid>
               </Grid>
             </AccordionDetails>
@@ -473,6 +530,24 @@ const CreativesForm: FC = () => {
         {isSettingsStep ? settingsView() : uploadView()}
       </Box>
     );
+  };
+
+  const handleDialogClose = () => {
+    setNotification(false);
+    history.push(`/line-item${orderId ? `?oid=${orderId}` : ''}`);
+  };
+
+  const renderSuccessDialog = () => {
+    return notification ? (
+      <Dialog open={true}>
+        <DialogTitle>{`Creatives added successfully to line item: ${lineItemDetails?.name}`}</DialogTitle>
+        <DialogActions sx={{ justifyContent: 'center' }}>
+          <Button color="success" variant="contained" onClick={handleDialogClose}>
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
+    ) : null;
   };
 
   const renderFooter = () => {
@@ -509,6 +584,7 @@ const CreativesForm: FC = () => {
       </Box>
       {renderBody()}
       {renderFooter()}
+      {renderSuccessDialog()}
     </Stack>
   );
 };

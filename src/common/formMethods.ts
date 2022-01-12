@@ -1,4 +1,4 @@
-import { PayloadLineItemForm, CreativeFormTypes, TemplateVar, ImageType } from './formTypes';
+import { PayloadLineItemForm, CreativeFormTypes, TemplateVar, ImageType, CreativeValidatorType } from './formTypes';
 
 function transformDate(date: Date | null) {
   const dt = date ?? new Date();
@@ -74,10 +74,11 @@ export const transformCreativesPayload = (
     const long = variables.filter((v) => v.type === 'Long' && creative[v.unique_name]);
     const isNativeAd = variables.find((v) => v.type === 'NATIVE_URL');
     const { image_meta = { width: 300, height: 250 } } = creative['Image'] as ImageType;
+    const { Width, Height } = creative;
     return {
       creative_name: creative.name,
       ...(!isNativeAd && {
-        size: image_meta,
+        size: Width && Height ? { width: Number(Width), height: Number(Height) } : image_meta,
       }),
       ...(isNativeAd && { dest_url: creative[isNativeAd.unique_name] }),
       asset_creative_template_variables: assets.map((v) => [v.unique_name, creative[v.unique_name]]),
@@ -86,4 +87,21 @@ export const transformCreativesPayload = (
       long_creative_template_variables: long.map((v) => [v.unique_name, Number(creative[v.unique_name])]),
     };
   });
+};
+
+export const validateCreativeSizes = (
+  creatives: CreativeFormTypes['creatives'],
+  sizes: string | string[],
+): CreativeValidatorType => {
+  if (!sizes.length) {
+    return {};
+  }
+  return creatives.reduce((acc, creative, idx) => {
+    const { Width, Height } = creative;
+    if (Width && Height && !sizes.includes(`${Width}x${Height}`)) {
+      acc.errors = acc.errors || new Array(creatives.length);
+      acc.errors[idx] = true;
+    }
+    return acc;
+  }, {} as CreativeValidatorType);
 };

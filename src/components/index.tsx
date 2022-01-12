@@ -6,3 +6,4 @@ export { default as ErrorBoundary } from './ErrorBoundary';
 export { default as AppNavDrawer } from './AppNavDrawer';
 export { default as DashboardCard } from './DashboardCard';
 export { default as CustomTable } from './CustomTable';
+export { default as AlertNotification } from './AlertNotification';

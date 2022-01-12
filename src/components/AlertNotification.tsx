@@ -2,8 +2,8 @@ import React, { FC } from 'react';
 
 import { Snackbar, Alert, AlertTitle, AlertProps, SnackbarOrigin } from '@mui/material';
 
-type NotificationTypes = FC & {
-  title: string;
+type NotificationTypes = {
+  title?: string;
   message: string;
   open?: boolean;
   type?: AlertProps['severity'];

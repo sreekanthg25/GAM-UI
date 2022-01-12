@@ -5,8 +5,7 @@ import { useRecoilValue } from 'Recoil';
 
 import { Link as RouteLink } from 'react-router-dom';
 
-import { Typography, Box, Grid, Divider, IconButton, TableCellProps } from '@mui/material';
-import { AddPhotoAlternate } from '@mui/icons-material';
+import { Typography, Box, Grid, Divider, Button, TableCellProps } from '@mui/material';
 
 import { lineItemsSelector, lineItemsByOrderId } from '@/recoil/selectors/lineitems';
 import { CustomTable } from '@/components';
@@ -23,12 +22,12 @@ const OrderLineItems: FC = () => {
     const selectedRow = row as Record<string, string>;
     return (
       <Box>
-        <IconButton
+        <Button
           component={RouteLink}
-          to={{ pathname: `/creatives`, search: `?lid=${selectedRow.id}&oid=${orderId}` }}
+          to={{ pathname: `/creatives`, search: `?lid=${selectedRow.id}${orderId ? `&oid=${orderId}` : ''}` }}
         >
-          <AddPhotoAlternate />
-        </IconButton>
+          Add Creatives
+        </Button>
       </Box>
     );
   };
