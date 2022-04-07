@@ -14,7 +14,7 @@ import LineItem from './lineItem';
 import Creatives from './creatives';
 
 const steps = [
-  { label: 'Create Booking', component: Booking, name: 'booking-form', type: 'submit' },
+  { label: 'Create Order', component: Booking, name: 'booking-form', type: 'submit' },
   { label: 'Create an line item', component: LineItem, name: 'line-item-form', type: 'submit' },
   { label: 'Create an Creatives', component: Creatives, name: 'creative-form', type: 'submit', actionText: 'Submit' },
 ];
@@ -93,7 +93,7 @@ const BookingForm: FC = () => {
           <Button onClick={handleBack} disabled={activeStep < 1 || isSaving} variant="outlined">
             Back
           </Button>
-          <Button disabled={isSaving} component={RouteLink} to="/bookings" variant="outlined" sx={{ ml: 2 }}>
+          <Button disabled={isSaving} component={RouteLink} to="/orders" variant="outlined" sx={{ ml: 2 }}>
             Cancel
           </Button>
         </Box>

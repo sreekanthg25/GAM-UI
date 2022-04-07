@@ -20,7 +20,6 @@ import {
   AccordionDetails,
   Skeleton,
   Stack,
-  Chip,
   FormHelperText,
   Button,
   Select,
@@ -33,7 +32,7 @@ import {
   DialogActions,
 } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
-import { UploadFileOutlined, ExpandMore, Info as InfoIcon } from '@mui/icons-material';
+import { ExpandMore, Info as InfoIcon } from '@mui/icons-material';
 import { SelectChangeEvent } from '@mui/material/Select';
 
 import { styled } from '@mui/material/styles';
@@ -42,28 +41,41 @@ import api from '@/utils/api';
 
 import { configsSelector } from '@/recoil/selectors/configs';
 
-import { refreshLineItems } from '@/recoil/atoms/lineitems';
+import { refreshCreatives } from '@/recoil/atoms/creatives';
 
-import { CreativeFormTypes, CreativeProps, TemplateVar, ImageType, CreativeValidatorType } from '@/common/formTypes';
+import {
+  CreativeFormTypes,
+  CreativeProps,
+  TemplateVar,
+  ImageType,
+  CreativeValidatorType,
+  FileTypes,
+} from '@/common/formTypes';
 import { transformCreativesPayload, validateCreativeSizes } from '@/common/formMethods';
 
-const supportedZipFileMimeTypes = ['application/zip', 'application/x-zip-compressed', 'multipart/x-zip'];
+import { DropFiles } from '@/components';
+
+const acceptFiles = [
+  'image/*',
+  'application/zip',
+  'application/x-zip-compressed',
+  'multipart/x-zip',
+  'application/rar',
+  'multipart/x-rar',
+  'application/x-rar',
+];
 
 const schema = yup.object().shape({
   template: yup.object().required(),
-  zip_file: yup
+  files: yup
     .mixed()
     .test('required', 'this field is required', (value) => !!value?.length)
-    .test('type', `Please check the format and upload again`, (value) => {
-      const files: File[] = Array.from(value || []);
-      return !files.some((file: File) => {
-        return !supportedZipFileMimeTypes.includes(file.type);
+    .test('type', `Please check the format and upload again`, (value: FileTypes[]) => {
+      return !value.some(({ file }) => {
+        const pattern = new RegExp(acceptFiles.join('|'));
+        return !pattern.test(file.type);
       });
     }),
-});
-
-const FileInput = styled('input')({
-  display: 'none',
 });
 
 const FieldSetWrapper = styled('fieldset')(({ theme }) => {
@@ -83,8 +95,9 @@ const CreativesForm: FC = () => {
     watch,
     register,
     setValue,
+    trigger,
   } = useForm<CreativeFormTypes>({
-    defaultValues: { template: null, creatives: [], globalCreatives: {}, globalVariableConfig: {} },
+    defaultValues: { template: null, creatives: [], globalCreatives: {}, globalVariableConfig: {}, files: [] },
     resolver: yupResolver(schema),
   });
 
@@ -99,6 +112,7 @@ const CreativesForm: FC = () => {
   const [creativeDimensions, setDimensions] = useState<TemplateVar[]>([]);
   const [imageUploading, setImageUploading] = useState(false);
   const [uploadedImages, setImagesUploaded] = useState<ImageType[]>([]);
+  const [fileMap, setFileMap] = useState<Record<string, string | ImageType[]>[]>([]);
   const [isSettingsEnabled, setSettingsAction] = useState(false);
   const [isSettingsStep, setSettingStep] = useState(false);
   const [lineItemDetails, setLineItemDetails] = useState<Record<string, string | CreativeProps[]> | null>(null);
@@ -127,7 +141,7 @@ const CreativesForm: FC = () => {
     }, [] as string[]);
   }, [lineItemDetails]);
 
-  const lineItemRefresh = useSetRecoilState(refreshLineItems);
+  const creativesRefresh = useSetRecoilState(refreshCreatives);
 
   const { fields } = useFieldArray({
     control,
@@ -135,18 +149,18 @@ const CreativesForm: FC = () => {
     keyName: 'uuid',
   });
 
-  const [selectedTemplate, uploadedZipFile, imageCreatives, globalCreatives, globalVariableConfig] = watch([
+  const [selectedTemplate, imageCreatives, globalCreatives, globalVariableConfig, uploadedFiles] = watch([
     'template',
-    'zip_file',
     'creatives',
     'globalCreatives',
     'globalVariableConfig',
+    'files',
   ]);
 
   useEffect(() => {
     if (lineItemId) {
       const getLineItemDetails = async () => {
-        const results = await api.get(`http://35.200.238.164:9000/basilisk/v0/lineitem/${lineItemId}`);
+        const results = await api.get(`/basilisk/v0/lineitem/${lineItemId}`);
         setLineItemDetails(results?.gp_line_item || null);
       };
       getLineItemDetails();
@@ -169,7 +183,7 @@ const CreativesForm: FC = () => {
   useEffect(() => {
     const getTemplates = async () => {
       setLoading(true);
-      const results = await api.get('http://35.200.238.164:9000/basilisk/v0/creativetemplates');
+      const results = await api.get('/basilisk/v0/creativetemplates');
       setTemplates(results.filter((obj: CreativeProps) => !!obj.name));
       setLoading(false);
     };
@@ -178,10 +192,10 @@ const CreativesForm: FC = () => {
 
   useEffect(() => {
     if (selectedTemplate) {
-      setValue('zip_file', null);
+      setValue('files', []);
       const getTemplateMeta = async () => {
         setTemplateLoading(true);
-        const results = await api.get(`http://35.200.238.164:9000/basilisk/v0/creativetemplate/${selectedTemplate.id}`);
+        const results = await api.get(`/basilisk/v0/creativetemplate/${selectedTemplate.id}`);
         setTemplateVariables([
           ...(selectedTemplate.type === 'SYSTEM_DEFINED_NATIVE'
             ? [{ label: 'Landing Page', unique_name: 'dest_url', is_required: true, type: 'NATIVE_URL' }]
@@ -200,27 +214,9 @@ const CreativesForm: FC = () => {
     }
   }, [selectedTemplate, setTemplateVariables, setValue]);
 
-  useEffect(() => {
-    if (uploadedZipFile) {
-      const uploadImages = async () => {
-        setImageUploading(true);
-        const imageZip = uploadedZipFile as FileList;
-        const zip = Array.from(imageZip || []);
-        const formData = new FormData();
-        formData.append('zip_file', zip[0]);
-        const results = await api.post('http://35.200.238.164:9000/basilisk/v0/media/upload', formData, {
-          formData: true,
-        });
-        setImagesUploaded(results);
-        setSettingsAction(true);
-        setImageUploading(false);
-      };
-      uploadImages();
-    }
-  }, [uploadedZipFile]);
-
   const setCreativesDefaultValues = () => {
-    const defaultCreatives = uploadedImages.map((image) => {
+    const filesArr = fileMap.reduce((acc, obj) => [...acc, ...(obj.files as ImageType[])], [] as ImageType[]);
+    const defaultCreatives = filesArr.map((image) => {
       const [name] = image.name.split('.');
       const variables = templateMetaVariables.reduce((acc, { unique_name }) => {
         if (unique_name === 'Image') {
@@ -241,16 +237,62 @@ const CreativesForm: FC = () => {
         ...variables,
       };
     });
+    setImagesUploaded(filesArr);
     setValue('creatives', defaultCreatives);
   };
 
-  const handleNext = () => {
-    setCreativesDefaultValues();
-    setSettingStep(true);
+  const handleNext = async () => {
+    const isValid = await trigger(['files']);
+    if (isValid) {
+      setCreativesDefaultValues();
+      setSettingStep(true);
+    }
+  };
+
+  const onDropFiles = (fileToUpload: FileTypes[]) => {
+    if (!fileToUpload.length) {
+      return;
+    }
+    const uploadFiles = async () => {
+      setImageUploading(true);
+
+      const promises = fileToUpload.map((file: FileTypes) => {
+        const formData = new FormData();
+        formData.append('files', file.file);
+        return api.post('/basilisk/v0/media/upload', formData, {
+          formData: true,
+        });
+      });
+      const results = await Promise.allSettled(promises);
+      let fulfilledImages: ImageType[] = [];
+      const fileUploaded: FileTypes[] = [];
+      const successFileMaps = results.reduce((acc, obj, idx) => {
+        if (obj.status === 'fulfilled') {
+          const { id } = fileToUpload[idx];
+          acc.push({ id, files: obj.value });
+          fileUploaded.push(fileToUpload[idx]);
+          fulfilledImages = [...fulfilledImages, ...obj.value];
+        }
+        return acc;
+      }, [] as Record<string, string | ImageType[]>[]);
+      setValue('files', [...uploadedFiles, ...fileUploaded]);
+      setFileMap([...fileMap, ...successFileMaps]);
+      setSettingsAction(true);
+      setImageUploading(false);
+    };
+    uploadFiles();
+  };
+
+  const onDeleteFile = (file: FileTypes) => {
+    setValue(
+      'files',
+      uploadedFiles.filter((item: FileTypes) => file.id !== item.id),
+    );
+    setFileMap(fileMap.filter((f) => f.id !== file.id));
   };
 
   const onSuccessfulSubmission = () => {
-    lineItemRefresh((curVal) => curVal + 1);
+    creativesRefresh((curVal) => curVal + 1);
     setNotification(true);
   };
 
@@ -268,7 +310,7 @@ const CreativesForm: FC = () => {
         template_id,
         creatives: transformCreativesPayload(creatives, templateMetaVariables),
       };
-      await api.post('http://35.200.238.164:9000/basilisk/v0/bulkcreative', payload);
+      await api.post('/basilisk/v0/bulkcreative', payload);
       onSuccessfulSubmission();
       setFormSavingState(false);
     } catch (err) {
@@ -281,25 +323,6 @@ const CreativesForm: FC = () => {
   const handleConfigChange = (e: SelectChangeEvent, name: string) => {
     const { value } = e.target;
     setValue(`globalCreatives.${name}`, value !== 'none' ? value : '');
-  };
-
-  const renderFileData = (uploads: FileList | null | undefined, field: 'zip_file'): React.ReactNode => {
-    const files: File[] = Array.from(uploads || []);
-    if (files.length) {
-      return !imageUploading
-        ? files.map((file, index) => (
-            <Chip
-              key={`${file.name}_${index}`}
-              label={file.name}
-              onDelete={() => {
-                setValue(field, null);
-              }}
-            />
-          ))
-        : null;
-    }
-
-    return <Typography>No file chosen*</Typography>;
   };
 
   const uploadView = () => {
@@ -330,32 +353,20 @@ const CreativesForm: FC = () => {
         </Grid>
         {selectedTemplate && (
           <>
-            <Grid item xs={12}>
-              <Stack direction="row">
-                <label htmlFor="zip-file-upload">
-                  <FileInput
-                    {...register('zip_file')}
-                    id="zip-file-upload"
-                    accept="application/zip, application/x-zip-compressed, multipart/x-zip"
-                    type="file"
-                  />
-                  <LoadingButton
-                    loading={imageUploading}
-                    loadingPosition="end"
-                    variant="outlined"
-                    component="span"
-                    endIcon={<UploadFileOutlined />}
-                    color={errors.zip_file ? 'error' : 'secondary'}
-                  >
-                    Upload Image Zip File
-                  </LoadingButton>
-                </label>
-                <Box component="span" sx={{ ml: 2, display: 'flex', alignItems: 'center' }}>
-                  {renderFileData(uploadedZipFile, 'zip_file')}
-                </Box>
-              </Stack>
-              <FormHelperText error={!!errors.zip_file}>{errors.zip_file?.message}</FormHelperText>
-              <FormHelperText>Upload compressed images in zip format.</FormHelperText>
+            <Grid item container xs={12}>
+              <Grid item xs={12} md={8}>
+                <DropFiles
+                  {...register('files')}
+                  onDropFiles={onDropFiles}
+                  accept={acceptFiles}
+                  files={uploadedFiles}
+                  onDelete={onDeleteFile}
+                  loading={imageUploading}
+                />
+                <FormHelperText error={!!errors.files}>
+                  {errors.files ? `Please upload files in recommended formats` : null}
+                </FormHelperText>
+              </Grid>
             </Grid>
             <Grid item md={8}>
               {templateLoading ? (
@@ -482,7 +493,7 @@ const CreativesForm: FC = () => {
                       </Grid>
                     ) : null;
                   })}
-                  {creativeDimensions.length && (
+                  {!!creativeDimensions.length && (
                     <Grid item xs={12}>
                       <Grid container spacing={4}>
                         {creativeDimensions.map(({ unique_name, label, is_required }) => {
@@ -534,7 +545,7 @@ const CreativesForm: FC = () => {
 
   const handleDialogClose = () => {
     setNotification(false);
-    history.push(`/line-item${orderId ? `?oid=${orderId}` : ''}`);
+    history.push(`/line-item/${lineItemId}${orderId ? `?oid=${orderId}` : ''}`);
   };
 
   const renderSuccessDialog = () => {

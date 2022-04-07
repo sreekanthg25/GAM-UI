@@ -7,9 +7,9 @@ const ConfigsForm = lazy(() => import('./configs/config-form'));
 const SettingsRoute: FC = () => {
   return (
     <Switch>
-      <Route exact component={Configs} path="/settings/configs" />
-      <Route component={ConfigsForm} path="/settings/configs/new" />
-      <Route component={ConfigsForm} path="/settings/configs/edit/:configName" />
+      <Route exact component={Configs} path="/admin-settings/configs" />
+      <Route component={ConfigsForm} path="/admin-settings/configs/new" />
+      <Route component={ConfigsForm} path="/admin-settings/configs/edit/:configName" />
     </Switch>
   );
 };

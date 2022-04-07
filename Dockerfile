@@ -1,5 +1,5 @@
 # Use below nginx version
-FROM nginx:1.15.2-alpine
+FROM nginx:1.21.6-alpine
 # Copy the dist folder of the react app
 COPY ./dist /var/www
 # Copy the ngnix configrations

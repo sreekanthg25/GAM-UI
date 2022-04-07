@@ -16,14 +16,14 @@ const pages: readonly NavPage[] = [
     title: 'Line Items',
   },
   {
-    path: '/bookings',
+    path: '/orders',
     icon: 'LibraryBooksIcon',
-    title: 'Bookings',
+    title: 'Orders',
   },
   {
-    path: '/settings',
+    path: '/admin-settings',
     icon: 'SettingsIcon',
-    title: 'Settings',
+    title: 'Admin',
     adminOnly: true,
   },
 ];

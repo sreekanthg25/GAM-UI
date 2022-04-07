@@ -1,11 +1,12 @@
 import React, { FC } from 'react';
 import { Link as RouteLink } from 'react-router-dom';
-import { AppBar, Box, Toolbar, Link, IconButton, MenuItem, Menu } from '@mui/material';
+import { AppBar, Box, Toolbar, Link, IconButton, MenuItem, Menu, Divider } from '@mui/material';
 import { Menu as MenuIcon, AccountCircle } from '@mui/icons-material';
 import { useHistory } from 'react-router-dom';
-import { useResetRecoilState } from 'Recoil';
+import { useResetRecoilState, useRecoilValue } from 'Recoil';
 
 import { userSelector } from '@/recoil/selectors/user';
+import { userData } from '@/recoil/atoms/user';
 
 import { AppNavDrawer } from '@/components';
 
@@ -13,6 +14,7 @@ const Layout: FC = ({ children }) => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const history = useHistory();
   const resetUser = useResetRecoilState(userSelector);
+  const uData = useRecoilValue(userData);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -25,6 +27,11 @@ const Layout: FC = ({ children }) => {
   const logout = () => {
     resetUser();
     history.replace('/login');
+  };
+
+  const navigate = (path: string) => {
+    setAnchorEl(null);
+    history.push(path);
   };
 
   return (
@@ -63,8 +70,11 @@ const Layout: FC = ({ children }) => {
               open={Boolean(anchorEl)}
               onClose={handleClose}
             >
-              <MenuItem onClick={handleClose}>Profile</MenuItem>
-              <MenuItem onClick={handleClose}>My account</MenuItem>
+              {/* <MenuItem onClick={handleClose}>Profile</MenuItem>
+              <MenuItem onClick={handleClose}>My account</MenuItem> */}
+              <MenuItem>{uData.email}</MenuItem>
+              <Divider />
+              <MenuItem onClick={() => navigate('/change-password')}>Change Password</MenuItem>
               <MenuItem onClick={logout}>Logout</MenuItem>
             </Menu>
           </div>

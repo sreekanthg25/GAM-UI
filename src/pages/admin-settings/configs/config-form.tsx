@@ -62,7 +62,7 @@ const ConfigForm: FC = () => {
     if (configName) {
       const fetchConfig = async () => {
         setFetchingStatus(true);
-        const results = await api.get(`http://35.200.238.164:9000/basilisk/v0/account/metadata/keys/${configName}`);
+        const results = await api.get(`/basilisk/v0/account/metadata/keys/${configName}`);
         const { bucket_name, kv_pairs } = results?.[0] || {};
         replace(kv_pairs);
         setValue('bucket_name', bucket_name);
@@ -73,7 +73,7 @@ const ConfigForm: FC = () => {
   }, [configName, replace, setValue]);
 
   const handleCancel = () => {
-    history.push('/settings/configs');
+    history.push('/admin-settings/configs');
   };
 
   const onAddAction = () => {
@@ -90,7 +90,7 @@ const ConfigForm: FC = () => {
       bucket_name,
       kv_pairs: variables,
     };
-    await api.post('http://35.200.238.164:9000/basilisk/v0/account/metadata', payload);
+    await api.post('/basilisk/v0/account/metadata', payload);
     setConfigRefresh((currVal) => currVal + 1);
     setSubmitStatus(false);
     handleCancel();

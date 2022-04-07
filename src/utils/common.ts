@@ -1,7 +1,7 @@
 export function get<T extends Record<string, T>>(
   data: Record<string, T>,
   path: string,
-): Record<string, T> | T | undefined {
+): Record<string, T> | T | string | undefined {
   if (!data || !path) {
     return undefined;
   }

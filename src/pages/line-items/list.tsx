@@ -1,11 +1,9 @@
 import React, { FC } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link as RouteLink } from 'react-router-dom';
 
 import { useRecoilValue } from 'Recoil';
 
-import { Link as RouteLink } from 'react-router-dom';
-
-import { Typography, Box, Grid, Divider, Button, TableCellProps } from '@mui/material';
+import { Typography, Box, Grid, Divider, Button, TableCellProps, Link } from '@mui/material';
 
 import { lineItemsSelector, lineItemsByOrderId } from '@/recoil/selectors/lineitems';
 import { CustomTable } from '@/components';
@@ -32,8 +30,17 @@ const OrderLineItems: FC = () => {
     );
   };
 
+  const renderNameCell = (row: RecordType) => {
+    const { name, id } = row as Record<string, string>;
+    return (
+      <Link component={RouteLink} to={{ pathname: `/line-item/${id}` }}>
+        {name}
+      </Link>
+    );
+  };
+
   const columns = [
-    { label: 'Name', field: 'name' },
+    { label: 'Name', renderer: renderNameCell },
     { label: 'Action', renderer: renderActions, cellProps: { align: 'right' } as TableCellProps },
   ];
 

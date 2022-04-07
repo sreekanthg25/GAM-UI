@@ -4,7 +4,7 @@
   "description": "Google Ad Manager",
   "main": "index.js",
   "scripts": {
-    "start": "webpack-dev-server --mode=development --open --hot",
+    "start": "webpack-dev-server --https --mode=development --open --hot",
     "build": "npm run clean && webpack --mode=production",
     "bundle-report": "webpack-bundle-analyzer --port 4200 dist/stats.json",
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -23,9 +23,11 @@
     "date-fns": "^2.23.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "react-dropzone": "^12.0.4",
     "react-hook-form": "^7.22.5",
     "react-router-dom": "^5.2.1",
     "recoil": "^0.4.1",
+    "uuid": "^8.3.2",
     "yup": "^0.32.9"
   },
   "devDependencies": {
@@ -42,6 +44,7 @@
     "@types/react-dom": "^17.0.9",
     "@types/react-router-dom": "^5.1.8",
     "@types/styled-components": "^5.1.13",
+    "@types/uuid": "^8.3.4",
     "@types/webpack-dev-server": "^4.0.3",
     "@typescript-eslint/eslint-plugin": "^4.29.3",
     "@typescript-eslint/parser": "^4.29.3",

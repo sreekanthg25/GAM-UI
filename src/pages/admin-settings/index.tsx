@@ -5,7 +5,7 @@ import { Typography, Box, Divider, Grid, MenuList, MenuItem, ListItemText } from
 
 import { styled } from '@mui/material/styles';
 
-import SettingsRoutes from './settings-routes';
+import SettingsRoutes from './admin-settings-routes';
 
 // import Configs from './configs';
 
@@ -31,7 +31,7 @@ const Settings: FC = () => {
   return (
     <Box sx={{ py: 5, px: 3, height: '100%' }}>
       <Box>
-        <Typography variant="h4">Settings</Typography>
+        <Typography variant="h4">Admin Settings</Typography>
         <Divider sx={{ mt: 2 }} />
       </Box>
       <Box sx={{ height: 'inherit' }}>
@@ -39,7 +39,7 @@ const Settings: FC = () => {
           <Grid item xs={2} sx={{ height: 'inherit' }}>
             <MenuListStyled>
               {menuList.map(({ name, label }, idx) => (
-                <MenuItem key={name} selected={idx === 0} component={RouteLink} to={`/settings/${name}`}>
+                <MenuItem key={name} selected={idx === 0} component={RouteLink} to={`/admin-settings/${name}`}>
                   <ListItemText>{label}</ListItemText>
                 </MenuItem>
               ))}

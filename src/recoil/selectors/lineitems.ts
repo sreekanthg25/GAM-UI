@@ -8,7 +8,7 @@ export const lineItemsSelector = selector({
   key: 'lineItemsSelector',
   get: ({ get }) => {
     get(refreshLineItems);
-    return api.get('http://35.200.238.164:9000/basilisk/v0/lineitems');
+    return api.get('/basilisk/v0/lineitems');
   },
 });
 
@@ -18,6 +18,6 @@ export const lineItemsByOrderId = selectorFamily({
     (orderId) =>
     ({ get }) => {
       get(refreshLineItems);
-      return api.get(`http://35.200.238.164:9000/basilisk/v0/lineitems/booking/${String(orderId)}`);
+      return api.get(`/basilisk/v0/lineitems/booking/${String(orderId)}`);
     },
 });

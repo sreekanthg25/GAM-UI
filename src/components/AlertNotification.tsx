@@ -2,7 +2,7 @@ import React, { FC } from 'react';
 
 import { Snackbar, Alert, AlertTitle, AlertProps, SnackbarOrigin } from '@mui/material';
 
-type NotificationTypes = {
+export type NotificationTypes = {
   title?: string;
   message: string;
   open?: boolean;

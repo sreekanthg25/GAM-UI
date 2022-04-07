@@ -32,7 +32,7 @@ const Dashboard: FC = () => {
             <Typography variant="h5" sx={{ mb: 2 }}>
               Reach 100 million users
             </Typography>
-            <Button component={RouterLink} to="/bookings/create" variant="contained" size="medium">
+            <Button component={RouterLink} to="/orders/create" variant="contained" size="medium">
               Create New Booking
             </Button>
           </Box>
@@ -40,7 +40,7 @@ const Dashboard: FC = () => {
       </Grid>
       <Grid item container xs={12} spacing={5} sx={{ justifyContent: 'space-around' }}>
         <Grid item xs={10} md={5}>
-          <DashboardCard bgColor={pink[500]} count={orders.length} title="Total Bookings" action="/bookings" />
+          <DashboardCard bgColor={pink[500]} count={orders.length} title="Total Orders" action="/orders" />
         </Grid>
         <Grid item xs={10} md={5}>
           <DashboardCard bgColor={teal[500]} count={lineItems.length} title="Total Line Items" action="/line-item" />

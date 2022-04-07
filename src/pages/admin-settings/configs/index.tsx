@@ -64,7 +64,7 @@ const Configs: FC = () => {
 
   const onAction = async () => {
     setActionLoading(true);
-    await api.delete(`http://35.200.238.164:9000/basilisk/v0/account/metadata/${actionRow}`);
+    await api.delete(`/basilisk/v0/account/metadata/${actionRow}`);
     setActionLoading(false);
     handleDialogClose();
     setConfigRefresh((currVal) => currVal + 1);

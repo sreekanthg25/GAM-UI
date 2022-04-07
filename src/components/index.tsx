@@ -7,3 +7,6 @@ export { default as AppNavDrawer } from './AppNavDrawer';
 export { default as DashboardCard } from './DashboardCard';
 export { default as CustomTable } from './CustomTable';
 export { default as AlertNotification } from './AlertNotification';
+export { default as DropFiles } from './DropFiles';
+
+export * from './AlertNotification';

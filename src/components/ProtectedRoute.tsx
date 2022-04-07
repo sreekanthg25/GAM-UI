@@ -8,16 +8,16 @@ import { Layout as MainLayout } from '@/components';
 type ProtectedProps = {
   Layout?: ElementType;
   noLayout?: boolean;
-  disableRecoilRoot?: boolean;
+  enableRecoilRoot?: boolean;
 } & RouteProps;
 
-const ProtectedRoute: FC<ProtectedProps> = ({ Layout = MainLayout, noLayout, disableRecoilRoot, ...rest }) => {
+const ProtectedRoute: FC<ProtectedProps> = ({ Layout = MainLayout, noLayout, enableRecoilRoot, ...rest }) => {
   const RouteNode = <Route {...rest} />;
   return useRecoilValue(userSelector) ? (
     noLayout ? (
       RouteNode
     ) : (
-      <Layout>{disableRecoilRoot ? RouteNode : <RecoilRoot>{RouteNode}</RecoilRoot>}</Layout>
+      <Layout>{enableRecoilRoot ? <RecoilRoot>{RouteNode}</RecoilRoot> : RouteNode}</Layout>
     )
   ) : (
     <Redirect to={{ pathname: '/login', state: { from: rest.location } }} />

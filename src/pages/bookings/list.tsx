@@ -22,6 +22,7 @@ import { CustomTable } from '@/components';
 import { orderSelector } from '@/recoil/selectors/order';
 
 import { refreshBooking } from '@/recoil/atoms/bookingform';
+import { refreshLineItems } from '@/recoil/atoms/lineitems';
 
 import api from '@/utils/api';
 
@@ -32,7 +33,9 @@ const BookingsList: FC = () => {
   const [isDialogOpen, setDialogState] = useState(false);
   const [actionRow, setActionRow] = useState<Record<string, string>>({});
   const [isActionLoading, setActionLoading] = useState(false);
+  const [refreshActionRows, setRefreshActionLoading] = useState<Record<string, boolean>>({});
   const refreshBookingData = useSetRecoilState(refreshBooking);
+  const refreshLineItemData = useSetRecoilState(refreshLineItems);
 
   const handleDialogClose = () => {
     setDialogState(false);
@@ -40,7 +43,7 @@ const BookingsList: FC = () => {
   const onMigrateConfirm = async () => {
     const { order_id } = actionRow;
     setActionLoading(true);
-    await api.post(`http://35.200.238.164:9000/basilisk/v0/migrate/booking/${order_id}`);
+    await api.post(`/basilisk/v0/migrate/booking/${order_id}`);
     setActionLoading(false);
     handleDialogClose();
     refreshBookingData((currVal) => currVal + 1);
@@ -76,6 +79,18 @@ const BookingsList: FC = () => {
     setActionRow(row);
   };
 
+  const onRefreshTable = () => {
+    refreshBookingData((currVal) => currVal + 1);
+  };
+
+  const onRefresh = async (row: Record<string, string>) => {
+    const { order_id, id } = row;
+    setRefreshActionLoading({ ...refreshActionRows, [id]: true });
+    await api.post(`/basilisk/v0/migrate/booking/${order_id}`);
+    setRefreshActionLoading({ ...refreshActionRows, [id]: false });
+    refreshLineItemData((currVal) => currVal + 1);
+  };
+
   const renderNameCell = (row: RecordType) => {
     const { name, id } = row as Record<string, string>;
     return (
@@ -87,12 +102,15 @@ const BookingsList: FC = () => {
 
   const renderActions = (row: RecordType) => {
     const selectedRow = row as Record<string, string>;
-    if (selectedRow.id) {
-      return null;
-    }
     return (
       <Box>
-        <Button onClick={() => onMigrate(selectedRow)}>Migrate</Button>
+        {selectedRow.id ? (
+          <LoadingButton loading={refreshActionRows[selectedRow.id]} onClick={() => onRefresh(selectedRow)}>
+            Refresh
+          </LoadingButton>
+        ) : (
+          <Button onClick={() => onMigrate(selectedRow)}>Migrate</Button>
+        )}
       </Box>
     );
   };
@@ -106,15 +124,15 @@ const BookingsList: FC = () => {
       <Grid container spacing={2}>
         <Grid item xs={12}>
           <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Typography variant="h4">Bookings</Typography>
-            <Button variant="contained" component={RouteLink} to="bookings/create">
+            <Typography variant="h4">Orders</Typography>
+            <Button variant="contained" component={RouteLink} to="orders/create">
               Create
             </Button>
           </Box>
           <Divider sx={{ mt: 2 }} />
         </Grid>
         <Grid item xs={12}>
-          <CustomTable rows={orders || []} columns={columns} />
+          <CustomTable rows={orders || []} columns={columns} onRefreshTable={onRefreshTable} />
         </Grid>
       </Grid>
       {renderDialog()}

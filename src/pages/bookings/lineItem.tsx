@@ -71,7 +71,7 @@ const LineItem: FC = () => {
   useEffect(() => {
     const getCreatives = async () => {
       setLoading(true);
-      const results = await api.get('http://35.200.238.164:9000/basilisk/v0/creativesizes');
+      const results = await api.get('/basilisk/v0/creativesizes');
       setCreatives(
         results.filter(
           (obj: CreativeProps) => !!obj.name && (obj.type === 'PIXEL' || obj.type === 'SYSTEM_DEFINED_NATIVE'),
@@ -86,7 +86,7 @@ const LineItem: FC = () => {
     try {
       setFormSavingState(true);
       const payload = transformPayloadData({ ...data, booking_id: booking.booking_id });
-      const results = await api.post('http://35.200.238.164:9000/basilisk/v0/lineitem', payload);
+      const results = await api.post('/basilisk/v0/lineitem', payload);
       setLineItem(data);
       setNextStep((step) => step + 1);
       setFormSavingState(false);
@@ -128,7 +128,6 @@ const LineItem: FC = () => {
                   {...field}
                   options={[{ name: 'Create New', id: 'new' }, ...lineItems]}
                   getOptionLabel={(option) => {
-                    console.log(option);
                     return option.name;
                   }}
                   onChange={(_, data) => field.onChange(data)}

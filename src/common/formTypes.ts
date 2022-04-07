@@ -46,12 +46,18 @@ export type ImageType = {
   };
 };
 
+export type FileTypes = {
+  id: string;
+  file: File;
+};
+
 export type CreativeFormTypes = {
   template: CreativeProps | null;
   zip_file: FileList | null | undefined;
   creatives: Record<string, string | ImageType | number>[];
   globalCreatives: Record<string, string>;
   globalVariableConfig: Record<string, string>;
+  files: FileTypes[];
 };
 
 export type CreativeValidatorType = {

@@ -69,7 +69,7 @@ const Booking: FC = () => {
   const handleFormSubmit: SubmitHandler<BookingFormInputs> = async ({ name }) => {
     try {
       setFormSavingState(true);
-      const results = await api.post('http://35.200.238.164:9000/basilisk/v0/booking', { name });
+      const results = await api.post('/basilisk/v0/booking', { name });
       setBooking((curVal) => ({ ...curVal, booking_id: results?.booking?.booking_id }));
       setNextStep((step) => step + 1);
       setFormSavingState(false);
@@ -103,14 +103,14 @@ const Booking: FC = () => {
     <Box>
       {err.open && renderSnackBar()}
       <Box sx={{ mb: 2 }}>
-        <Typography variant="h5">Booking</Typography>
+        <Typography variant="h5">Order</Typography>
       </Box>
       <Divider />
       <Box component="form" id="booking-form" noValidate onSubmit={handleSubmit(handleFormSubmit)} sx={{ my: 3 }}>
         <Grid container spacing={4}>
           <Grid item xs={12} md={8}>
             <FormControl required fullWidth error={!!errors.booking_id}>
-              <InputLabel id="booking-label">Select Booking</InputLabel>
+              <InputLabel id="booking-label">Select Order</InputLabel>
               <Controller
                 name="booking_id"
                 control={control}

@@ -16,8 +16,11 @@ const About = lazy(() => import('./about'));
 const BookingForm = lazy(() => import('./bookings/form'));
 const BookingList = lazy(() => import('./bookings'));
 const LineItemsList = lazy(() => import('./line-items'));
-const Settings = lazy(() => import('./settings'));
+const LineItemDetail = lazy(() => import('./line-items/details'));
+const Settings = lazy(() => import('./admin-settings'));
 const CreativesForm = lazy(() => import('./creatives'));
+const CreativeEdit = lazy(() => import('./creatives/edit'));
+const ChangePassword = lazy(() => import('./password/change'));
 // const OrderLineItems = lazy(() => import('./bookings/details/line-items/list'));
 
 export default function Pages(): ReactElement {
@@ -33,14 +36,17 @@ export default function Pages(): ReactElement {
       <Switch>
         <Redirect exact from="/" to="/dashboard" />
         <ProtectedRoute path="/dashboard" component={Dashboard} />
-        <ProtectedRoute exact path="/bookings" component={BookingList} />
-        <ProtectedRoute path="/bookings/create" component={BookingForm} />
-        {/* <ProtectedRoute path="/bookings/:orderId" component={OrderLineItems} /> */}
+        <ProtectedRoute exact path="/orders" component={BookingList} />
+        <ProtectedRoute path="/orders/create" component={BookingForm} />
+        {/* <ProtectedRoute path="/orders/:orderId" component={OrderLineItems} /> */}
         <ProtectedRoute exact path="/line-item" component={LineItemsList} />
+        <ProtectedRoute path="/line-item/:lid" component={LineItemDetail} />
         <ProtectedRoute exact path="/creatives" component={CreativesForm} />
+        <ProtectedRoute path="/creatives/:cid/edit" component={CreativeEdit} />
         <ProtectedRoute path="/about" component={About} />
-        <Redirect exact from="/settings" to="/settings/configs" />
-        {isAdmin && <ProtectedRoute path="/settings" component={Settings} />}
+        <ProtectedRoute path="/change-password" component={ChangePassword} />
+        <Redirect exact from="/admin-settings" to="/admin-settings/configs" />
+        {isAdmin && <ProtectedRoute path="/admin-settings" component={Settings} />}
         <Route path="/login" component={Login} />
         <Route component={NotFound} />
       </Switch>

@@ -8,6 +8,6 @@ export const configsSelector = selector({
   key: 'configsSelector',
   get: ({ get }) => {
     get(refreshConfigs);
-    return api.get('http://35.200.238.164:9000/basilisk/v0/account/metadata');
+    return api.get('/basilisk/v0/account/metadata');
   },
 });

@@ -61,7 +61,7 @@ const SignIn: FC = () => {
   const handleLogin: SubmitHandler<IFormInputs> = async (data) => {
     setLoadingState(true);
     try {
-      const resp = await api.post('http://35.200.208.69:9000/v1/login', { ...data, account_name: 'PlanetWorthx' });
+      const resp = await api.post('//api.gamplus.in/v1/login', { ...data });
       setUserState(resp);
     } catch (err) {
       const { error } = err as { error: string };

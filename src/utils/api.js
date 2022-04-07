@@ -1,9 +1,12 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { getToken, clearUserData } from './user';
 
+const apiHost = 'api.gamplus.in';
+
 async function api(url, method = 'GET', body = null, options = {}) {
   const token = getToken();
-  const response = await fetch(`${url}`, {
+  const urlWithHost = /^(https?:|\/\/)/.test(url) ? url : `//${apiHost}${url}`;
+  const response = await fetch(`${urlWithHost}`, {
     method,
     ...(body && (options.formData ? { body } : { body: JSON.stringify(body) })),
     headers: {
@@ -16,7 +19,7 @@ async function api(url, method = 'GET', body = null, options = {}) {
     if (resp.status === 401) {
       clearUserData();
     }
-    throw resp.json();
+    throw resp;
   }
   try {
     return await response.json();
@@ -29,5 +32,6 @@ export default {
   get: api,
   post: (url, body, options) => api(url, 'POST', body, options),
   put: (url, body) => api(url, 'PUT', body),
+  patch: (url, body) => api(url, 'PATCH', body),
   delete: (url) => api(url, 'DELETE'),
 };

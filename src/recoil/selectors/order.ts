@@ -8,6 +8,6 @@ export const orderSelector = selector({
   key: 'orderSelector',
   get: ({ get }) => {
     get(refreshBooking);
-    return api.get('http://35.200.238.164:9000/basilisk/v0/bookings');
+    return api.get('/basilisk/v0/bookings');
   },
 });
